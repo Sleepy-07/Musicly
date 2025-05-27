@@ -1,6 +1,7 @@
 package com.example.music_player.BottomSheetDialogs
 
 import android.app.Dialog
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -29,7 +30,7 @@ import com.example.music_player.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreatePlayListDialog(onDismiss : ()-> Unit, openDialog :() -> Unit) {
+fun CreatePlayListDialog(onDismiss : ()-> Unit, openDialog : () -> Unit ={}) {
     val sheetstate = rememberModalBottomSheetState()
 
     ModalBottomSheet(
@@ -44,8 +45,9 @@ fun CreatePlayListDialog(onDismiss : ()-> Unit, openDialog :() -> Unit) {
             .fillMaxWidth(1f)
             .padding(horizontal = 20.dp)
             .clickable {
-//                createshowsheet = false
-                openDialog
+                createshowsheet = false
+                Log.e("Custom dialog", "HomeScreen: ", )
+                openDialog()
 
 
             },

@@ -536,32 +536,32 @@ fun AlbumCarousel(modifier: Modifier = Modifier) {
         pageCount = { currentsonglist.size }
     )
 
-    // Track the current playing index
-    var currentPlayingIndex by remember { mutableStateOf(audioPlayer.index) }
+    // Track if the page change was user-initiated
+    var isUserSwipe by remember { mutableStateOf(false) }
 
     LaunchedEffect(audioPlayer.index) {
-        // When the playing index changes (including shuffle), update the pager
-        if (audioPlayer.index != pagerState.currentPage) {
+        // Only respond to index changes if they weren't caused by user swipe
+        if (!isUserSwipe && audioPlayer.index != pagerState.currentPage) {
             pagerState.animateScrollToPage(audioPlayer.index)
         }
-        currentPlayingIndex = audioPlayer.index
     }
 
     LaunchedEffect(pagerState.currentPage) {
         snapshotFlow { pagerState.currentPage }
             .collectLatest { currentPage ->
-                if (currentPage != currentPlayingIndex) {
-                    // Only handle manual swipes when not in shuffle mode
-                    if (audioPlayer.playBackMode != audioPlayer.PlayBackMode.SHUFFLE) {
-                        when {
-                            currentPage > currentPlayingIndex -> {
-                                audioPlayer.playNext(context)
-                            }
-                            currentPage < currentPlayingIndex -> {
-                                audioPlayer.playPrevious(context)
-                            }
+                // Only handle manual swipes when not in shuffle mode
+                if (audioPlayer.playBackMode != audioPlayer.PlayBackMode.SHUFFLE) {
+                    when {
+                        currentPage > audioPlayer.index -> {
+                            isUserSwipe = true
+                            audioPlayer.playNext(context)
+                            isUserSwipe = false
                         }
-                        currentPlayingIndex = currentPage
+                        currentPage < audioPlayer.index -> {
+                            isUserSwipe = true
+                            audioPlayer.playPrevious(context)
+                            isUserSwipe = false
+                        }
                     }
                 }
             }

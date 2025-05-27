@@ -1,7 +1,9 @@
 package com.example.music_player
 
 import android.Manifest
+import android.R.attr.data
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
@@ -52,19 +54,25 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.music_player.BottomSheetDialogs.CreatePlayListDialog
-import com.example.music_player.Components.CustomDialog
+import com.example.music_player.BottomSheetDialogs.NamePlayListDialog
+import com.example.music_player.BottomSheetDialogs.addSongPlayList
 import com.example.music_player.Components.PlayerBar
+import com.example.music_player.Components.addSongSheet
 import com.example.music_player.Components.audioPlayer
 import com.example.music_player.Components.createshowsheet
 import com.example.music_player.Components.currentsong
 import com.example.music_player.Components.customdialog
+import com.example.music_player.Components.showsheet
 import com.example.music_player.Components.songduration
 import com.example.music_player.RoomDatabse.Data
+import com.example.music_player.RoomDatabse.Playlist
 //import com.example.music_player.Components.playerBar
 import com.example.music_player.Screens.SongsScreen
 import com.example.music_player.Screens.fullSongScreen
 import com.example.music_player.Screens.libraryScreen
 import com.example.music_player.ui.theme.Music_PlayerTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlin.math.log
 
@@ -80,14 +88,11 @@ class MainActivity : ComponentActivity() {
         BottomItem(R.drawable.search,"Search"),
         BottomItem(R.drawable.lib,"Library"),
         BottomItem(R.drawable.add,"Create"),
-
     )
 
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-
         enableEdgeToEdge()
         setContent {
           Music_PlayerTheme {
@@ -123,48 +128,39 @@ class MainActivity : ComponentActivity() {
 private fun MainActivity.HomeScreen() {
     var selectedindex by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-    var showsheet by remember { mutableStateOf(false) }
     val navController = rememberNavController()
+    var playlistid by remember { mutableStateOf(0L) }
+
+    val db = Data.getInstance(context)
 
 
     Log.e("showsheet outside ", "HomeScreen: sheet = $showsheet and song = $showsheet ", )
 
     if(showsheet){
-        currentsong?.let {song->
-            Log.e("showsheet inside ", "HomeScreen: sheet = $showsheet and song = $song ", )
-            fullSongScreen(song, onDismiss = {
-                showsheet = false
-            },
-                tooglePlay = {
-                    audioPlayer.togglePause()
-            },
-                onSeek = {postion->
-                    audioPlayer.seekTo(postion)
-                },
-                onrRepeat = {
-                    Toast.makeText(context, "Song Set to repeat", Toast.LENGTH_SHORT).show()
-                    audioPlayer.playBackMode = if(audioPlayer.playBackMode != audioPlayer.PlayBackMode.REPEAT_ONE) audioPlayer.PlayBackMode.REPEAT_ONE else audioPlayer.PlayBackMode.NORMAL
-                },
-                onShuffle = {
-                    Toast.makeText(context, "List Set to shuffle", Toast.LENGTH_SHORT).show()
-
-                    audioPlayer.playBackMode = if(audioPlayer.playBackMode != audioPlayer.PlayBackMode.SHUFFLE) audioPlayer.PlayBackMode.SHUFFLE else audioPlayer.PlayBackMode.NORMAL
-                }
-            )
-        }
+        ShowPlayBar(context)
     }
 
     if(createshowsheet){
-        CreatePlayListDialog(onDismiss = {
-            createshowsheet = false
-        }, openDialog = {
-            customdialog = true
-        }
-            )
+        OpenPlayListDailog()
+
     }
 
     if(customdialog){
-        CustomDialog()
+        NamePlayListDialog(dismissDialog = {
+            customdialog = false
+        }, createPlayList = {name->
+            customdialog = false
+            CoroutineScope(Dispatchers.IO).launch {
+             playlistid = db.playListDao().CreatePlayList(Playlist(playlistname =  name))
+                addSongSheet = true
+            }
+        })
+    }
+
+    if(addSongSheet){
+        addSongPlayList(playlistid, ondismiss = {
+            addSongSheet = false
+        })
     }
 
 
@@ -192,9 +188,6 @@ private fun MainActivity.HomeScreen() {
 
                         }
                     )
-
-
-
                 }
                 Spacer(modifier = Modifier.height(2.dp))
 
@@ -225,7 +218,7 @@ private fun MainActivity.HomeScreen() {
                         selected = selectedindex == index,
                         onClick = {
                             if(bottomlist[index].label == "Create"){
-                                Log.e("DoNothing", "HomeScreen: sheet = $createshowsheet", )
+                                Log.e("DoNothing", "HomeScreen: sheet = $createshowsheet",)
                                createshowsheet = true
                             }
                             else{
@@ -274,6 +267,44 @@ private fun MainActivity.HomeScreen() {
             }
         }
     )
+}
+
+@Composable
+fun OpenPlayListDailog() {
+    CreatePlayListDialog(onDismiss = {
+        createshowsheet = false
+    }, openDialog = {
+        Log.e("Custom dialog", "HomeScreen: ", )
+        customdialog = true
+    }
+    )
+}
+
+@Composable
+fun ShowPlayBar(context : Context) {
+    currentsong?.let {song->
+        Log.e("showsheet inside ", "HomeScreen: sheet = $showsheet and song = $song ", )
+        fullSongScreen(song, onDismiss = {
+            showsheet = false
+        },
+            tooglePlay = {
+                audioPlayer.togglePause()
+            },
+            onSeek = {postion->
+                audioPlayer.seekTo(postion)
+            },
+            onrRepeat = {
+                Toast.makeText(context, "Song Set to repeat", Toast.LENGTH_SHORT).show()
+                audioPlayer.playBackMode = if(audioPlayer.playBackMode != audioPlayer.PlayBackMode.REPEAT_ONE) audioPlayer.PlayBackMode.REPEAT_ONE else audioPlayer.PlayBackMode.NORMAL
+            },
+            onShuffle = {
+                Toast.makeText(context, "List Set to shuffle", Toast.LENGTH_SHORT).show()
+
+                audioPlayer.playBackMode = if(audioPlayer.playBackMode != audioPlayer.PlayBackMode.SHUFFLE) audioPlayer.PlayBackMode.SHUFFLE else audioPlayer.PlayBackMode.NORMAL
+            }
+        )
+    }
+
 }
 
 private fun MainActivity.CheckRequest() : Boolean  {

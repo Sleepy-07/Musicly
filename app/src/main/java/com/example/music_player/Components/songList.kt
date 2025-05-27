@@ -1,8 +1,11 @@
 package com.example.music_player.Components
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,10 +15,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -30,9 +37,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.example.music_player.BottomItem
 import com.example.music_player.R
 import com.example.music_player.RoomDatabse.SongMetadata
@@ -47,6 +56,11 @@ var CurrentRuningPlayList by mutableStateOf< List<SongMetadata>>(emptyList())
 
 var createshowsheet by mutableStateOf(false)
 var customdialog by mutableStateOf(false)
+
+var showsheet by   mutableStateOf(false)
+var addSongSheet by   mutableStateOf(false)
+
+
 
 
 val bottomlist = listOf(
@@ -103,38 +117,3 @@ fun formatDurationAccurate(durationFloat: Float): String {
 }
 
 
-
-@Composable
-fun CustomDialog(modifier: Modifier = Modifier) {
-    androidx.compose.ui.window.Dialog(
-        onDismissRequest = {}
-    ) {
-
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
-            Text("PlayList Name")
-
-            OutlinedTextField(
-                value = "",
-                onValueChange = {},
-                placeholder = {Text("PlayList 1")}
-
-            )
-            Row {
-                Button(
-                    onClick = {}
-                ) {
-                    Text("Cancle")
-                }
-                Button(
-                    onClick = {}
-                ) {
-                    Text("Create")
-                }
-
-
-            }
-        }
-    }
-
-}

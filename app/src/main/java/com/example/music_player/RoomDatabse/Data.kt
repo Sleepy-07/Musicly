@@ -5,13 +5,25 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [SongMetadata::class], version=1 , exportSchema = true)
+@Database(entities = [SongMetadata::class, Playlist ::class, PlaylistEntry::class], version=2 , exportSchema = true)
 @TypeConverters(Converters::class)
+
+
+
 abstract class Data() : RoomDatabase() {
+
+
     abstract fun inter() : Inter
+    abstract fun playListDao() : PlayListDao
 
     companion object{
+
+
+
+
         private var data : Data? = null
 
         fun getInstance(context: Context):Data {

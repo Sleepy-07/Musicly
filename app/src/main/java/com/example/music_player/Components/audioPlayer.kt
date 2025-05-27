@@ -269,12 +269,10 @@ object audioPlayer{
                 else -> Player.REPEAT_MODE_OFF
             }
         }
-
     }
 
     fun playIndex(ind : Int,context: Context){
         index = ind
-
         val db = Data.getInstance(context)
         db.inter().UpdatePlayCount(System.currentTimeMillis(),currentsonglist[index].songId)
         playSong(currentsonglist[index],context)

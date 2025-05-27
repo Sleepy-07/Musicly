@@ -5,8 +5,10 @@ import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
+import java.nio.charset.CodingErrorAction.REPLACE
 
 import kotlin.toString
 
@@ -37,6 +39,43 @@ interface Inter {
 
     @Query("select * from songs where songId ==:id")
     fun getSingleItem(id: Long) : SongMetadata
+
+
+
+
+
+}
+
+@Dao
+interface PlayListDao{
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun CreatePlayList(data : Playlist) : Long
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun InsertSongIntoPlayList(data : PlaylistEntry)
+
+    @Transaction
+    @Query("SELECT * FROM playList WHERE playlistId = :playlistId")
+     fun getPlaylistWithSongs(playlistId: Long): PlaylistWithSongs
+
+
+    @Query("SELECT * FROM playList")
+    fun getAllPlaylistsFlow(): Flow<List<Playlist>>
+
+
+
+    @Delete
+    suspend fun removeSongFromPlaylist(crossRef: PlaylistEntry)
+
+
+    @Transaction
+    @Query("SELECT * FROM playList")
+    suspend fun getAllPlaylistsWithSongs(): List<PlaylistWithSongs>
+
+
+
+
 
 
 
