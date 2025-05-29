@@ -58,12 +58,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.error
+import coil3.request.fallback
+import coil3.request.placeholder
+import coil3.request.transformations
 import com.example.music_player.BottomItem
 import com.example.music_player.Components.audioPlayer.progress
 import com.example.music_player.R
 import com.example.music_player.RoomDatabse.Data
+import com.example.music_player.RoomDatabse.PlaylistEntry
 import com.example.music_player.RoomDatabse.SongMetadata
 import kotlin.math.abs
 import kotlin.math.max
@@ -96,12 +101,8 @@ fun PlayerBar(
 
     Log.e("Current Progress2 ", "PlayerBar: $progress ", )
 
+
     Column(modifier = Modifier.padding(horizontal = 8.dp)){
-
-        showtime(modifier = Modifier
-            .align(Alignment.End)
-            .padding(end = 15.dp))
-
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -188,9 +189,19 @@ fun PlayerBar(
                 }
 
                 IconButton(onClick = {
+                    if(item.isLiked){
+                        db.inter().UpdateSongLike(System.currentTimeMillis(),item.songId)
+                        Log.e("Song Liked ", "fullSongScreen: ${item.isLiked}", )
+                        db.playListDao().removeSongFromPlaylist(PlaylistEntry(playlistId = 1, songId = item.songId))
+                    }
+                    else{
+                        db.inter().UpdateSongLike(System.currentTimeMillis(),item.songId)
+                        Log.e("Song Liked ", "fullSongScreen: ${item.isLiked}", )
+
+                        db.playListDao().insertSongIntoPlayList(PlaylistEntry(playlistId = 1, songId = item.songId))
+                    }
                     isFav = if(isFav == R.drawable.like) R.drawable.like_filled else R.drawable.like
                     item.isLiked = !item.isLiked
-                    db.inter().UpdateSongLike(System.currentTimeMillis(),item.songId)
                     currentsong = item
                 }) {
                     Log.e("Like Song inside playbar ", "HomeScreen:like =   ${currentsong?.isLiked}", )
@@ -216,13 +227,10 @@ fun PlayerBar(
         CustomSpotifySlider(
             progress = progress,
             onSeek = onSeek,
-            modifier = Modifier.padding(bottom = 7.dp)
         )
 
     }
-
     }
-
 }
 @Composable
 fun CustomSpotifySlider(
@@ -278,11 +286,11 @@ fun CustomSpotifySlider(
             )
 
             // Thumb
-            drawCircle(
-                color = Color.White,
-                radius = thumbRadius.toPx(),
-                center = Offset(size.width * progress, center.y)
-            )
+//            drawCircle(
+//                color = Color.White,
+//                radius = thumbRadius.toPx(),
+//                center = Offset(size.width * progress, center.y)
+//            )
         }
     }
 }

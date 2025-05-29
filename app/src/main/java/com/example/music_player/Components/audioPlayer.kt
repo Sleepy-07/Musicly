@@ -282,6 +282,18 @@ object audioPlayer{
         progress = 0f
     }
 
+    fun playIndexPlayList(ind : Int, songs : List<SongMetadata>, context: Context){
+        index = ind
+        currentsonglist = songs
+        val db = Data.getInstance(context)
+        db.inter().UpdatePlayCount(System.currentTimeMillis(),currentsonglist[index].songId)
+        playSong(currentsonglist[index],context)
+
+        currentsong = currentsonglist[index]
+        mediaitem = MediaItem.fromUri(currentsong!!.uri)
+        progress = 0f
+    }
+
     fun getPlayer() : ExoPlayer{
         return exoplayer!!
     }

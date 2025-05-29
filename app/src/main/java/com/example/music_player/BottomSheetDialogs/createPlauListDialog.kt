@@ -46,7 +46,7 @@ fun CreatePlayListDialog(onDismiss : ()-> Unit, openDialog : () -> Unit ={}) {
             .padding(horizontal = 20.dp)
             .clickable {
                 createshowsheet = false
-                Log.e("Custom dialog", "HomeScreen: ", )
+                Log.e("Custom dialog", "HomeScreen: ",)
                 openDialog()
 
 
@@ -73,4 +73,5 @@ fun CreatePlayListDialog(onDismiss : ()-> Unit, openDialog : () -> Unit ={}) {
 
 
 }
+
 

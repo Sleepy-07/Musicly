@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.draw.blur
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,8 +50,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
@@ -63,10 +67,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+
+import coil3.compose.AsyncImage
+import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
+import coil3.request.error
+import coil3.request.fallback
+import coil3.request.placeholder
+import coil3.request.transformations
+//import com.example.music_player.Components.CurrentPlaylistname
 import com.example.music_player.Components.audioPlayer
 import com.example.music_player.Components.bottomlist
+import com.example.music_player.Components.currenetplaylistname
 import com.example.music_player.Components.currentsong
 import com.example.music_player.Components.currentsonglist
 import com.example.music_player.Components.getTotalDuration
@@ -74,9 +86,12 @@ import com.example.music_player.Components.songcurrenttime
 import com.example.music_player.Components.songduration
 import com.example.music_player.R
 import com.example.music_player.RoomDatabse.Data
+import com.example.music_player.RoomDatabse.Playlist
+import com.example.music_player.RoomDatabse.PlaylistEntry
 import com.example.music_player.RoomDatabse.SongMetadata
 import kotlinx.coroutines.flow.collectLatest
 import kotlin.math.abs
+import kotlin.math.log
 
 //@Preview(showSystemUi = true)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,6 +100,8 @@ import kotlin.math.abs
 
 fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modifier = Modifier, tooglePlay : () -> Unit ={}, onSeek : (Float) -> Unit = {} , onrRepeat : () -> Unit ={} , onShuffle : () -> Unit = {} ){
 
+//    val curreptnplaylistname = CurrentPlaylistname.current
+//
 
     Log.e(
         "OpenFull Page",
@@ -127,11 +144,27 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
         dragHandle = null,
         modifier = Modifier.height(1500.dp)
     ) {
+        Box(modifier = Modifier.fillMaxSize(1f)){
+
+            Image(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(radius = 20.dp), // Reduced from 100.dp
+                painter = rememberAsyncImagePainter(currentsong?.album),
+                contentDescription = "Blurred background",
+                contentScale = ContentScale.Crop
+            )
+
+            // Semi-transparent overlay
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = .8f))
+            )
 
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF101010)),
+                .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
 
@@ -159,9 +192,9 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
 
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Playing From PlayList:", color = Color.White)
+                    Text("Playing From $currenetplaylistname", color = Color.White, fontSize = 13.sp)
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(item.title, color = Color.Gray, maxLines = 1,modifier = Modifier.width(100.dp))
+                        Text(item.title, color = Color.Gray, maxLines = 1, fontSize = 10.sp,modifier = Modifier.width(100.dp))
                         Image(
                             painterResource(R.drawable.dropdown), ""
                         )
@@ -217,9 +250,19 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
                         }
                         IconButton(
                             onClick = {
+                                if(item.isLiked){
+                                    db.inter().UpdateSongLike(System.currentTimeMillis(),item.songId)
+                                    Log.e("Song Liked ", "fullSongScreen: ${item.isLiked}", )
+                                    db.playListDao().removeSongFromPlaylist(PlaylistEntry(playlistId = 1, songId = item.songId))
+                                }
+                                else{
+                                    db.inter().UpdateSongLike(System.currentTimeMillis(),item.songId)
+                                    Log.e("Song Liked ", "fullSongScreen: ${item.isLiked}", )
+
+                                    db.playListDao().insertSongIntoPlayList(PlaylistEntry(playlistId = 1, songId = item.songId))
+                                }
                                 isFav = if(isFav == R.drawable.like) R.drawable.like_filled else R.drawable.like
                                 item.isLiked = !item.isLiked
-                                db.inter().UpdateSongLike(System.currentTimeMillis(),item.songId)
                                 currentsong = item
                             }
                         ) {
@@ -365,6 +408,9 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
                 }
             }
         }
+
+        }
+
     }
 
 }

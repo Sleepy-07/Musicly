@@ -4,10 +4,13 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollConfiguration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,8 +33,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import coil3.request.error
+import coil3.request.fallback
+import coil3.request.placeholder
+import coil3.request.transformations
 import com.example.music_player.Screens.PlayLocalSong
 import com.example.music_player.R
 import com.example.music_player.RoomDatabse.Data
@@ -40,21 +48,16 @@ import com.example.music_player.RoomDatabse.SongMetadata
 @Composable
 fun songListItemHome(list : List<SongMetadata>, modifier: Modifier = Modifier, onclick : (Pair<Long, SongMetadata>) ->Unit) {
 
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(2),
-        modifier = modifier
-    ) {
-        itemsIndexed(list) { index,item->
-
-            SongGridItems(list,index, onSongClick = { onclick(Pair(item.songId,item))} )
-        }
+    Box(
+        modifier = Modifier.height(600.dp)
+    ){
 
     }
 
 }
 
 @Composable
-fun SongGridItems(songlist : List<SongMetadata>,index: Int, onSongClick: () -> Unit) {
+fun SongGridItems(songlist : List<SongMetadata>,index: Int, onSongClick: (Long) -> Unit) {
     val context = LocalContext.current
 
     Row(
@@ -63,7 +66,7 @@ fun SongGridItems(songlist : List<SongMetadata>,index: Int, onSongClick: () -> U
             .padding(bottom = 5.dp, start = 3.dp)
             .clickable {
                 PlayLocalSong(songlist, index ,context)
-                onSongClick()
+                onSongClick(songlist[index].songId)
             },
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -77,7 +80,7 @@ fun SongGridItems(songlist : List<SongMetadata>,index: Int, onSongClick: () -> U
                 .build(),
             contentDescription = songlist[index].title,
             modifier = Modifier
-                .size(75.dp)
+                .size(60.dp)
                 .clip(RoundedCornerShape(9.dp)),
             contentScale = ContentScale.Crop
         )
@@ -85,7 +88,6 @@ fun SongGridItems(songlist : List<SongMetadata>,index: Int, onSongClick: () -> U
             modifier = Modifier
                 .weight(1f)
                 .padding(start = 10.dp),
-            verticalArrangement = Arrangement.Center
         ) {
             Text(
                 text = songlist[index].title,
@@ -111,10 +113,10 @@ fun SongGridItems(songlist : List<SongMetadata>,index: Int, onSongClick: () -> U
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun songListItemRest(list: List<SongMetadata>,  modifier: Modifier = Modifier, onSongClick: (Pair<Long, SongMetadata>) -> Unit) {
+fun songListItemRest(list: List<SongMetadata>, playlistname : String, modifier: Modifier = Modifier, onSongClick: (Pair<Long, SongMetadata>) -> Unit) {
 
-//    val recentlyPlayed = allSongs.sortedByDescending { it.lastPlayed }.take(10)
     val context = LocalContext.current
+    currenetplaylistname = playlistname
 
     val db = Data.getInstance(context)
 

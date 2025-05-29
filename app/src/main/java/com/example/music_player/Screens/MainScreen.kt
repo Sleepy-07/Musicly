@@ -7,8 +7,16 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.LocalOverscrollConfiguration
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
@@ -19,7 +27,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.music_player.Components.AritistList
 import com.example.music_player.Components.PlayerBar
+import com.example.music_player.Components.SongGridItems
 import com.example.music_player.Components.allSongs
 import com.example.music_player.Components.audioPlayer
 import com.example.music_player.Components.currentsong
@@ -29,6 +39,7 @@ import com.example.music_player.Components.songListItemHome
 import com.example.music_player.Components.songListItemRest
 import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.SongMetadata
+import com.example.music_player.ui.theme.projectBlack
 import kotlin.math.log
 
 
@@ -38,6 +49,9 @@ fun SongsScreen(paddingValues: PaddingValues) {
     val context = LocalContext.current
     val db = Data.getInstance(context)
     val songs = allSongs
+    var artistList = AritistList.current
+
+
 
     val recentlyPlayed by db.inter().getRecentlyPlayedFlow().collectAsState(initial = emptyList())
 
@@ -47,73 +61,106 @@ fun SongsScreen(paddingValues: PaddingValues) {
         SyncSongs(context, db)
         likedSongList.clear()
         allSongs.clear()
+        artistList.clear()
         allSongs.addAll(db.inter().getData())
+        artistList.addAll(allSongs.map { it.artist })
+        Log.e("Artitist", "SongsScreen: ${artistList.size} and \ndata ${artistList.map { it }} \nLcoallist = ${AritistList}", )
+
         likedSongList.addAll(db.inter().getLikedSongs())
     }
 
-    Column(
+
+    val state = rememberLazyListState()
+
+    Box(
         modifier = Modifier
             .fillMaxSize(1f)
             .padding(horizontal = 10.dp)
-            .padding(paddingValues)
-    ) {
-        Text("Music", fontSize = 20.sp, color = Color.White,)
-
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(1f)
-                .padding(top = 18.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Recently Played", fontSize = 19.sp, color = Color.White)
-            Text("View All", fontSize = 13.sp, color = Color.White)
-
-        }
-
+            .padding(top = 32.dp)
+    ){
 
         CompositionLocalProvider(
             LocalOverscrollConfiguration provides null
         ) {
-            songListItemRest(recentlyPlayed) { (songId, item) ->
-                Log.e("Song Id", "SongsScreen:  $songId",)
-                db.inter().UpdatePlayCount(System.currentTimeMillis(), songId)
-                // Update the item in the UI
-                val index = songs.indexOfFirst { it.songId == songId }
-                if (index != -1) {
-                    val updated = db.inter().getSingleItem(songId) // fetch the updated song
-                    allSongs[index] = updated
+
+        LazyColumn(state = state) {
+
+            item {
+                Text("Music", fontSize = 20.sp, color = Color.White,)
+
+            }
+
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(1f)
+                        .padding(top = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("Recently Played", fontSize = 19.sp, color = Color.White)
+                    Text("View All", fontSize = 13.sp, color = Color.White)
+
+                }
+
+
+            }
+            item {
+                CompositionLocalProvider(
+                    LocalOverscrollConfiguration provides null
+                ) {
+                    songListItemRest(recentlyPlayed,"Recently PLayed") { (songId, item) ->
+                        Log.e("Song Id", "SongsScreen:  $songId",)
+                        db.inter().UpdatePlayCount(System.currentTimeMillis(), songId)
+                        // Update the item in the UI
+                        val index = songs.indexOfFirst { it.songId == songId }
+                        if (index != -1) {
+                            val updated = db.inter().getSingleItem(songId) // fetch the updated song
+                            allSongs[index] = updated
+                        }
+                    }
                 }
             }
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(1f)
-                .padding(top = 20.dp, bottom = 20.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("All Songs", fontSize = 19.sp, color = Color.White)
-        }
-        CompositionLocalProvider(
-            LocalOverscrollConfiguration provides null
-        ) {
-            songListItemHome(songs, onclick = { (songId, item) ->
-                Log.e("Song Id", "SongsScreen:  $songId",)
-                db.inter().UpdatePlayCount(System.currentTimeMillis(), songId)
-                // Update the item in the UI
-                val index = songs.indexOfFirst { it.songId == songId }
-                if (index != -1) {
-                    val updated = db.inter().getSingleItem(songId) // fetch the updated song
-                    allSongs[index] = updated
+
+
+            stickyHeader {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(1f)
+                        .background(projectBlack)
+                        .padding(vertical = 13.dp)
+
+                ){
+                    Text("All Songs", fontSize = 19.sp, color = Color.White)
                 }
-            })
+            }
+
+            itemsIndexed(songs){index,song->
+
+                        SongGridItems(songs,index, onSongClick = {id->
+                            db.inter().UpdatePlayCount(System.currentTimeMillis(),id)
+                            val index = songs.indexOfFirst { it.songId == id }
+                        if (index != -1) {
+                            val updated = db.inter().getSingleItem(id) // fetch the updated song
+                            allSongs[index] = updated
+                        }
+
+
+                        } )
+
+
+                }
+            item {
+                Spacer(modifier = Modifier.height(120.dp))
+            }
+
+            }
+
         }
     }
-
-
 }
+
+
 fun FetchLocalSongs(context: Context): List<SongMetadata> {
     val songs = mutableListOf<SongMetadata>()
     val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
@@ -185,6 +232,7 @@ fun SyncSongs(context: Context, db : Data){
     }
 
     db.inter().InsertItem(newSongs)
+
 }
 
 

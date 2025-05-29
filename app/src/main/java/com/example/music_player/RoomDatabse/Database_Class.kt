@@ -26,7 +26,8 @@ data class SongMetadata(
 @Entity(tableName = "playList")
 data class Playlist(
     @PrimaryKey(autoGenerate = true) val playlistId: Long = 0,
-    val playlistname: String
+    val playlistname: String,
+    val playlistlogo : String,
 )
 
 @Entity(primaryKeys = ["playlistId", "songId"])
@@ -34,7 +35,6 @@ data class PlaylistEntry(
     val playlistId: Long,
     val songId: Long
 )
-
 
 data class PlaylistWithSongs(
     @Embedded val playlist: Playlist,

@@ -5,8 +5,10 @@ import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -31,9 +33,11 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.currentCompositionLocalContext
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,6 +60,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.music_player.BottomSheetDialogs.CreatePlayListDialog
 import com.example.music_player.BottomSheetDialogs.NamePlayListDialog
 import com.example.music_player.BottomSheetDialogs.addSongPlayList
+import com.example.music_player.Components.AritistList
+import com.example.music_player.Components.LocalAppNavController
 import com.example.music_player.Components.PlayerBar
 import com.example.music_player.Components.addSongSheet
 import com.example.music_player.Components.audioPlayer
@@ -66,14 +72,17 @@ import com.example.music_player.Components.showsheet
 import com.example.music_player.Components.songduration
 import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.Playlist
-//import com.example.music_player.Components.playerBar
 import com.example.music_player.Screens.SongsScreen
+import com.example.music_player.Screens.ViewplayList
 import com.example.music_player.Screens.fullSongScreen
 import com.example.music_player.Screens.libraryScreen
+import com.example.music_player.Screens.searchScreen
 import com.example.music_player.ui.theme.Music_PlayerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 import kotlin.math.log
 
 data class BottomItem(
@@ -95,10 +104,19 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
+            val navController = rememberNavController()
+            val artitstlist = remember { mutableStateListOf<String>() }
+            CompositionLocalProvider(
+                LocalAppNavController provides navController,
+                AritistList provides  artitstlist,
+
+            ) {
           Music_PlayerTheme {
               if(CheckRequest())
               HomeScreen()
           }
+
+            }
         }
     }
 
@@ -128,7 +146,7 @@ class MainActivity : ComponentActivity() {
 private fun MainActivity.HomeScreen() {
     var selectedindex by remember { mutableIntStateOf(0) }
     val context = LocalContext.current
-    val navController = rememberNavController()
+    val navController = LocalAppNavController.current
     var playlistid by remember { mutableStateOf(0L) }
 
     val db = Data.getInstance(context)
@@ -151,7 +169,7 @@ private fun MainActivity.HomeScreen() {
         }, createPlayList = {name->
             customdialog = false
             CoroutineScope(Dispatchers.IO).launch {
-             playlistid = db.playListDao().CreatePlayList(Playlist(playlistname =  name))
+             playlistid = db.playListDao().CreatePlayList(Playlist(playlistname =  name, playlistlogo = ""))
                 addSongSheet = true
             }
         })
@@ -189,7 +207,9 @@ private fun MainActivity.HomeScreen() {
                         }
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
+
+
+//                Spacer(modifier = Modifier.height(2.dp))
 
 
                 Box(
@@ -224,9 +244,7 @@ private fun MainActivity.HomeScreen() {
                             else{
                                 selectedindex = index
                             navController.navigate(bottomlist[index].label){
-                            popUpTo(navController.graph.startDestinationId){
-                                saveState = true
-                            }
+                            popUpTo(navController.graph.startDestinationId)
                                 launchSingleTop = true
                                 restoreState = true
                             }
@@ -263,8 +281,14 @@ private fun MainActivity.HomeScreen() {
 
                 composable("Home") {SongsScreen(innerpadding)  }
                 composable("Library") { libraryScreen(innerpadding) }
+                composable ("EditPlaylist/{playlistid}"){ backStackEntry->
+                    val playlist = backStackEntry.arguments?.getString("playlistid")!!.toLong()
+
+                    ViewplayList(innerpadding,playlist) }
+                composable ("Search"){ searchScreen() }
 
             }
+
         }
     )
 }
@@ -299,12 +323,10 @@ fun ShowPlayBar(context : Context) {
             },
             onShuffle = {
                 Toast.makeText(context, "List Set to shuffle", Toast.LENGTH_SHORT).show()
-
                 audioPlayer.playBackMode = if(audioPlayer.playBackMode != audioPlayer.PlayBackMode.SHUFFLE) audioPlayer.PlayBackMode.SHUFFLE else audioPlayer.PlayBackMode.NORMAL
             }
         )
     }
-
 }
 
 private fun MainActivity.CheckRequest() : Boolean  {

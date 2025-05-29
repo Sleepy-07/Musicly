@@ -3,17 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
-//    alias(libs.plugins.sqldelight)
 }
 
-//sqldelight {
-//    databases{
-//        create("AppDatabase"){
-//            packageName = "com.example.music_player.db"
-////            schemaOutputDirectory = file("src/main/sqldelight/databases")
-//        }
-//    }
-//}
 
 android {
     namespace = "com.example.music_player"
@@ -89,7 +80,8 @@ dependencies {
     implementation("androidx.documentfile:documentfile:1.1.0-alpha01")
 
 
-    implementation("io.coil-kt:coil-compose:2.4.0")
+    implementation("io.coil-kt.coil3:coil-compose:3.2.0")
+//    implementation("io.coil-kt:coil-transformations:2.0.0")
 
 
     //    // Navigation Compose
