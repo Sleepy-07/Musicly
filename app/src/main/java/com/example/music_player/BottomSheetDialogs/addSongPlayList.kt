@@ -58,6 +58,7 @@ import com.example.music_player.R
 import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.PlaylistEntry
 import com.example.music_player.RoomDatabse.PlaylistWithSongs
+import com.example.music_player.Screens.albumScreen
 import com.example.music_player.ui.theme.projectBlue
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -66,7 +67,7 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun addSongPlayList(id : Long, ondismiss : () -> Unit) {
+fun addSongPlayList(id : Long,isForAlbum : Boolean = false, ondismiss : () -> Unit) {
 
     val context = LocalContext.current
     val sheetState = rememberModalBottomSheetState(
@@ -79,7 +80,7 @@ fun addSongPlayList(id : Long, ondismiss : () -> Unit) {
     val db = Data.getInstance(context)
 
 
-    val songs = if(queerySearch =="") allSongs else{
+    val songs = if(queerySearch == "") allSongs else{
         val query = queerySearch.trim().lowercase()
         allSongs.filter {songs->
             val title = songs.title.trim().lowercase().replace(" ","")
@@ -91,13 +92,16 @@ fun addSongPlayList(id : Long, ondismiss : () -> Unit) {
     }
 
     val existingIds = remember { mutableStateListOf<Long>() }
-
+    if(!isForAlbum){
     LaunchedEffect(id) {
         db.playListDao().getPlaylistWithSongs(id).collect { playlistWithSongs ->
             existingIds.clear()
             existingIds.addAll(playlistWithSongs.songs.map { it.songId })
         }
     }
+    }
+
+
 
     Log.e("My Songs", "addSongPlayList:songs = $songs and\n allsongs $allSongs ", )
     ModalBottomSheet(

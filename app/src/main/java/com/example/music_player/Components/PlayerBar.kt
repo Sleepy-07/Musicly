@@ -179,14 +179,6 @@ fun PlayerBar(
             // Controls
             Row(
             ) {
-                IconButton(onClick = {
-
-                }) {
-                    Image(
-                        painter = painterResource(R.drawable.add),
-                        contentDescription = "Add to playlist"
-                    )
-                }
 
                 IconButton(onClick = {
                     if(item.isLiked){

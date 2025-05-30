@@ -90,3 +90,34 @@ interface PlayListDao{
 
 
 }
+
+
+@Dao
+interface MusicDao {
+    // Artists
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+     fun insertArtist(artist: Artist)
+
+    @Query("SELECT * FROM artists order by artistName ASC ")
+    fun getAllArtists(): Flow<List<Artist>>
+
+    // Albums
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+     fun insertAlbum(album: Album)
+
+    @Transaction
+    @Query("SELECT * FROM albums WHERE artistId = :artistId")
+    fun getAlbumsByArtist(artistId: Long): List<AlbumWithSongs>
+
+    @Transaction
+    @Query("SELECT * FROM albums ")
+    fun getAllAlbumsByArtist(): Flow<List<AlbumWithSongs>>
+
+
+
+
+    @Transaction
+    @Query("SELECT * FROM songs WHERE artistId = :artistId")
+    fun getSongsByArtist(artistId: Long): Flow<List<SongMetadata>>
+
+}

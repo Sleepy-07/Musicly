@@ -8,6 +8,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
+import com.example.music_player.RoomDatabse.AlbumWithSongs
 
 val LocalAppNavController = staticCompositionLocalOf<NavHostController> {
     error("NavController not provided")
@@ -19,3 +20,6 @@ val AritistList = staticCompositionLocalOf{
 
 var currenetplaylistname by  mutableStateOf("")
 
+
+
+var isPlaying by mutableStateOf(false)

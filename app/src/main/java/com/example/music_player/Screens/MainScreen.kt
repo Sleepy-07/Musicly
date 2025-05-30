@@ -37,6 +37,8 @@ import com.example.music_player.Components.likedSongList
 import com.example.music_player.Components.showtime
 import com.example.music_player.Components.songListItemHome
 import com.example.music_player.Components.songListItemRest
+import com.example.music_player.RoomDatabse.Album
+import com.example.music_player.RoomDatabse.Artist
 import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.SongMetadata
 import com.example.music_player.ui.theme.projectBlack
@@ -99,7 +101,6 @@ fun SongsScreen(paddingValues: PaddingValues) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Recently Played", fontSize = 19.sp, color = Color.White)
-                    Text("View All", fontSize = 13.sp, color = Color.White)
 
                 }
 
@@ -164,53 +165,81 @@ fun SongsScreen(paddingValues: PaddingValues) {
 fun FetchLocalSongs(context: Context): List<SongMetadata> {
     val songs = mutableListOf<SongMetadata>()
     val collection = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
+
+    // Updated projection to get more detailed metadata
     val projection = arrayOf(
         MediaStore.Audio.Media._ID,
         MediaStore.Audio.Media.TITLE,
         MediaStore.Audio.Media.ARTIST,
+        MediaStore.Audio.Media.ARTIST_ID,
+        MediaStore.Audio.Media.ALBUM,
+        MediaStore.Audio.Media.ALBUM_ID,
         MediaStore.Audio.Media.DURATION,
-        MediaStore.Audio.Media.ALBUM_ID
+        MediaStore.Audio.Media.YEAR,
+        MediaStore.Audio.Media.TRACK
     )
-    val selection = null
-    val sortOrder = "${MediaStore.Audio.Media.DATE_ADDED} DESC"
+
+    val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
+    val sortOrder = "${MediaStore.Audio.Media.TITLE} ASC"
 
     Log.d("MusicDebug", "Querying MediaStore for local songs...")
 
-    val cursor = context.contentResolver.query(
-        collection, projection, selection, null, sortOrder
-    )
-
-    if (cursor == null) {
-        Log.e("MusicDebug", "Cursor is null — permission denied or media unavailable")
-        return emptyList()
-    }
-
-    cursor.use {
-        val idIndex = it.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
-        val titleIndex = it.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
-        val artistIndex = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-        val durationIndex = it.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
-        val album = it.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+    context.contentResolver.query(
+        collection,
+        projection,
+        selection,
+        null,
+        sortOrder
+    )?.use { cursor ->
+        val idCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
+        val titleCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
+        val artistCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
+        val artistIdCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID)
+        val albumCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
+        val albumIdCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
+        val durationCol = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
 
         var count = 0
-        while (it.moveToNext()) {
-            val id = it.getLong(idIndex)
-            val title = it.getString(titleIndex)
-            val artist = it.getString(artistIndex)
-            val duration = it.getLong(durationIndex)
-            val uri = ContentUris.withAppendedId(collection, id)
-            val album = ContentUris.withAppendedId(
+        while (cursor.moveToNext()) {
+            val id = cursor.getLong(idCol)
+            val title = cursor.getString(titleCol) ?: "Unknown Title"
+            val artistName = cursor.getString(artistCol) ?: "Unknown Artist"
+            val artistId = cursor.getLong(artistIdCol)
+            val albumName = cursor.getString(albumCol) ?: "Unknown Album"
+            val albumId = cursor.getLong(albumIdCol)
+            val duration = cursor.getLong(durationCol)
+
+            val songUri = ContentUris.withAppendedId(collection, id)
+            val albumArtUri = ContentUris.withAppendedId(
                 Uri.parse("content://media/external/audio/albumart"),
-                it.getLong(album)
+                albumId
             )
 
-            songs.add(SongMetadata(
-                songId = id, title = title, artist =  artist, duration = duration,uri = uri,album = album))
-            Log.d("MusicDebug", "Found song: $title by $artist ($duration ms)")
+            songs.add(
+                SongMetadata(
+                    songId = id,
+                    title = title,
+                    artistId = artistId,  // Link to artist table
+                    albumId = albumId,     // Link to album table
+                    duration = duration,
+                    uri = songUri,
+                    album = albumArtUri,
+                    // Default values for new fields
+                    playCount = 0,
+                    isLiked = false,
+                    lastPlayed = 0L,
+                    likedTimeStamp = 0L,
+                    artist = artistName,
+                    albumName = albumName
+                )
+            )
+
+            Log.d("MusicDebug", "Added: $title | ArtistID: $artistId | AlbumID: $albumId")
             count++
         }
-
-        Log.d("MusicDebug", "Total songs fetched: $count")
+        Log.d("MusicDebug", "Total songs processed: $count")
+    } ?: run {
+        Log.e("MusicDebug", "Cursor is null - permission issue or no media")
     }
 
     return songs
@@ -228,9 +257,58 @@ fun SyncSongs(context: Context, db : Data){
     val mediaKeys = db.inter().getData().map { it.songId }.toSet()
     val fetchsongs = FetchLocalSongs(context)
     val newSongs = fetchsongs.filter { it.songId !in mediaKeys }.map {
-        SongMetadata( songId = it.songId, title = it.title, artist =  it.artist, duration = it.duration,uri = it.uri,album = it.album)
+        SongMetadata(
+            songId = it.songId,
+            title = it.title,
+            artist = it.artist,
+            duration = it.duration,
+            uri = it.uri,
+            album = it.album,
+            artistId = it.artistId,
+            albumId = it.albumId,
+            albumName = it.albumName,
+        )
     }
 
+    val artistMap = mutableMapOf<Long, MutableList<SongMetadata>>()  // Group by artistId
+    val albumMap = mutableMapOf<Long, MutableList<SongMetadata>>()   // Group by albumId
+
+    newSongs.forEach { song ->
+        artistMap.getOrPut(song.artistId) { mutableListOf() }.add(song)
+        albumMap.getOrPut(song.albumId) { mutableListOf() }.add(song)
+    }
+
+// Convert to Artist list
+    val artists = artistMap.map { (artistId, songs) ->
+        Artist(
+            artistId = artistId,
+            artistName = songs.first().artist,
+            numberOfSongs = songs.size,
+            numberOfAlbums = songs.map { it.albumId }.distinct().size
+        )
+    }
+
+// Convert to Album list
+    val albums = albumMap.map { (albumId, songs) ->
+        Album(
+            albumId = albumId,
+            albumName = songs.first().albumName,
+            artistId = songs.first().artistId,
+            albumArtUri = songs.first().album,
+            numberOfSongs = songs.size
+        )
+    }
+
+
+//    val artist = newSongs.map { Artist(it.artistId, it.artist,it.) }
+
+
+    albums.forEach {
+        db.musicDao().insertAlbum(it)
+    }
+    artists.forEach {
+        db.musicDao().insertArtist(it)
+    }
     db.inter().InsertItem(newSongs)
 
 }

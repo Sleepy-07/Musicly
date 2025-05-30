@@ -1,5 +1,6 @@
 package com.example.music_player.Screens
 
+import android.content.Intent
 import android.util.Log
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
@@ -12,6 +13,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.ui.draw.blur
@@ -89,6 +91,7 @@ import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.Playlist
 import com.example.music_player.RoomDatabse.PlaylistEntry
 import com.example.music_player.RoomDatabse.SongMetadata
+import com.example.music_player.ui.theme.projectBlue
 import kotlinx.coroutines.flow.collectLatest
 import kotlin.math.abs
 import kotlin.math.log
@@ -201,12 +204,6 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
                     }
                 }
 
-                Image(
-                    painterResource(R.drawable.more), "",
-
-                    )
-
-
             }
 
 
@@ -218,7 +215,7 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
 
             Column(
                 modifier = Modifier
-                    .padding(top = 90.dp)
+//                    .padding(top = 90.dp)
                     .padding(horizontal = 37.dp)
                     .fillMaxSize(1f)
             ) {
@@ -239,13 +236,13 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
                         Text(item.artist, fontSize = 16.sp, color = Color.Gray, maxLines = 1)
                     }
                     Row {
-                        IconButton(
-                            onClick = {}
-                        ) {
+                        IconButton(onClick = {
+                            showQueue = true
+
+                        }) {
                             Image(
-                                painter = painterResource(
-                                    R.drawable.add
-                                ), "", colorFilter = ColorFilter.tint(Color.White)
+                                painterResource(R.drawable.queue), "",
+                                colorFilter = ColorFilter.tint(Color.White)
                             )
                         }
                         IconButton(
@@ -283,9 +280,6 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
                     onSeek = onSeek
 
                 )
-
-
-
 
 
 //            Music Time
@@ -383,29 +377,6 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
 
                 }
 
-
-
-                Row(
-                    modifier = Modifier
-                        .padding(top = 10.dp)
-                        .align(Alignment.End)
-                ) {
-                    IconButton(onClick = {}) {
-                        Image(
-                            painterResource(R.drawable.share), "",
-                            colorFilter = ColorFilter.tint(Color.White)
-                        )
-                    }
-                    IconButton(onClick = {
-                       showQueue = true
-
-                    }) {
-                        Image(
-                            painterResource(R.drawable.queue), "",
-                            colorFilter = ColorFilter.tint(Color.White)
-                        )
-                    }
-                }
             }
         }
 
@@ -620,17 +591,40 @@ fun AlbumCarousel(modifier: Modifier = Modifier) {
             snapAnimationSpec = tween(
                 durationMillis = 300,
                 easing = FastOutSlowInEasing
-            )
+            ),
         ),
+        contentPadding = PaddingValues(horizontal = 35.dp),
         modifier = modifier
-            .fillMaxWidth(1f)
-            .aspectRatio(1f)
+            .fillMaxWidth()
+            .height(450.dp)
     ) { page ->
+
         val song = currentsonglist[page]
+
+        // Calculate page offset from the center
+        val pageOffset = ((pagerState.currentPage - page) + pagerState.currentPageOffsetFraction).coerceIn(-1f, 1f)
+
+        // Alpha: fade non-current pages (min 0.5 alpha)
+        val alpha = 1f - kotlin.math.abs(pageOffset) * 0.5f
+
+        // Scale: slightly reduce size for side pages
+        val scale = 1f - kotlin.math.abs(pageOffset) * 0.15f
+
         Box(
-            modifier = Modifier.fillMaxWidth(1f),
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    this.alpha = alpha
+                    scaleX = scale
+                    scaleY = scale
+                },
             contentAlignment = Alignment.Center
         ) {
+            Box(
+                modifier = Modifier.size(285.dp)
+                    .clip(CircleShape)
+                    .background(projectBlue)
+            )
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(song.album)
@@ -641,11 +635,10 @@ fun AlbumCarousel(modifier: Modifier = Modifier) {
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .padding(top = 50.dp)
-                    .width(322.dp)
-                    .height(300.dp)
-                    .clip(RoundedCornerShape(60.dp))
+                    .size(280.dp)
+                    .clip(CircleShape)
             )
         }
     }
+
 }

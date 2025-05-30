@@ -88,22 +88,24 @@ import com.example.music_player.ui.theme.projectBlue
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
+fun albumScreen(innerPadding: PaddingValues, artitistid : Long) {
 
     val context = LocalContext.current
     val db = Data.getInstance(context)
     val navController = LocalAppNavController.current
 
-    val playlist = db.playListDao().getPlaylistsFlow(playListId)
+    val playlist = db.musicDao().getAlbumsByArtist(artitistid)
 
-    val playlistsongs by db.playListDao().getPlaylistWithSongs(playListId).collectAsState(
-        initial = PlaylistWithSongs(Playlist(playListId,"", ""),emptyList())
-    )
+    Log.e("Album", "albumScreen: $playlist", )
+
+//    val playlistsongs by db.playListDao().getPlaylistWithSongs(playListId).collectAsState(
+//        initial = PlaylistWithSongs(Playlist(playListId,"", ""),emptyList())
+//    )
 
     var addSongs by remember { mutableStateOf(false) }
-   val duration = playlistsongs.songs.sumOf { it.duration }
+    val duration = playlist[0].songs.sumOf { it.duration }
 
-    Log.e("PlayListEdit", "ViewplayList: $playlistsongs", )
+//    Log.e("PlayListEdit", "ViewplayList: $playlistsongs", )
     val scrollState = rememberLazyListState()
     val buttonVisible by remember {
         derivedStateOf {
@@ -120,18 +122,13 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
 
     val density = LocalDensity.current
 
+
     val scrollOffset by remember(scrollState) {
         derivedStateOf {
             calculateTotalScroll(scrollState, density).also {
                 Log.d("Scroll", "Index: ${scrollState.firstVisibleItemIndex}, Offset: ${scrollState.firstVisibleItemScrollOffset}, Total: $it px")
             }
         }
-    }
-
-    if(addSongs){
-        addSongPlayList(playListId, ondismiss ={
-            addSongs = false
-        })
     }
 
     LaunchedEffect(scrollState) {
@@ -173,7 +170,7 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
     Box(modifier = Modifier
         .fillMaxSize()
         .padding(top = 32.dp)
-        ) {
+    ) {
 
         LazyColumn(state = scrollState, modifier = Modifier.padding(horizontal = 15.dp)) {
             // Large Cover Section
@@ -185,18 +182,14 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     AsyncImage(
-                        model =  if(playListId==1L){
+                       model =
                             ImageRequest.Builder(LocalContext.current)
-                                .data(R.drawable.likesongs)
-                                .build()
-                        }else{
-                            ImageRequest.Builder(LocalContext.current)
-                                .data(if (playlist.playlistlogo.isNullOrBlank()) null else playlist.playlistlogo)
+                                .data(playlist[0].album.albumArtUri)
                                 .error(R.drawable.default_album_art)
                                 .placeholder(R.drawable.default_album_art)
                                 .fallback(R.drawable.default_album_art)
                                 .build()
-                        }, "",
+                        , "",
                         modifier = Modifier.size(imagesize)
                     )
                 }
@@ -209,9 +202,9 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
 
-                    Text(playlist.playlistname, fontSize = 17.sp)
-                    Text(playlistsongs.songs.size.toString() +" songs", fontSize = 14.sp)
-                    Text("playback "+formatDuration(duration) +" min", fontSize = 14.sp, color = Color.Gray)
+                        Text(playlist[0].album.albumName, fontSize = 17.sp)
+                        Text(playlist[0].songs.size.toString() +" songs", fontSize = 14.sp)
+                        Text("playback "+formatDuration(duration) +" min", fontSize = 14.sp, color = Color.Gray)
 
                     }
 
@@ -225,26 +218,11 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
                             contentAlignment = Alignment.Center
                         ){
 
-                        IconButton(
-                            onClick = {
-                                addSongs = true
+                            IconButton(
+                                onClick = {}
+                            ) {
+                                Icon(painterResource(R.drawable.shuffle),"", modifier = Modifier.size(35.dp))
                             }
-                        ) {
-                            Icon(painterResource(R.drawable.add),"")
-                        }
-                        }
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .border(1.dp, color = projectBlue, RoundedCornerShape(100.dp)),
-                            contentAlignment = Alignment.Center
-                        ){
-
-                        IconButton(
-                            onClick = {}
-                        ) {
-                            Icon(painterResource(R.drawable.shuffle),"", modifier = Modifier.size(35.dp))
-                        }
                         }
 
                         Box(
@@ -256,7 +234,7 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
 
                             IconButton(
                                 onClick = {
-                                    audioPlayer.playSongPlayList(playlistsongs.songs,0,context)
+                                    audioPlayer.playSongPlayList(playlist[0].songs,0,context)
                                 }
                             ) {
                                 Icon(painterResource(R.drawable.play),"")
@@ -269,39 +247,39 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
 
 
             // Song List
-            itemsIndexed(playlistsongs.songs) { index,song ->
-             Row(modifier = Modifier
-                 .fillMaxWidth(1f)
-                 .padding(bottom = 10.dp)
-                 .clickable{
-                     currenetplaylistname = playlist.playlistname
-                     audioPlayer.playIndexPlayList(index,playlistsongs.songs, context)
-                 },
-                 horizontalArrangement = Arrangement.spacedBy(10.dp),
-                 verticalAlignment = Alignment.CenterVertically){
-                 AsyncImage(
-                     model = ImageRequest.Builder(LocalContext.current)
-                         .data(song.album)
-                         .error(R.drawable.default_album_art)
-                         .fallback(R.drawable.default_album_art)
-                         .placeholder(R.drawable.default_album_art)
-                         .build(),
-                     "",
-                     contentScale = ContentScale.Crop,
-                     modifier = Modifier
-                         .size(50.dp)
-                         .clip(RoundedCornerShape(10.dp))
+            itemsIndexed(playlist[0].songs) { index,song ->
+                Row(modifier = Modifier
+                    .fillMaxWidth(1f)
+                    .padding(bottom = 10.dp)
+                    .clickable {
+                        currenetplaylistname = playlist[0].album.albumName
+                        audioPlayer.playIndexPlayList(index, playlist[0].songs, context)
+                    },
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically){
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(song.album)
+                            .error(R.drawable.default_album_art)
+                            .fallback(R.drawable.default_album_art)
+                            .placeholder(R.drawable.default_album_art)
+                            .build(),
+                        "",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(50.dp)
+                            .clip(RoundedCornerShape(10.dp))
 
 
-                 )
+                    )
 
-                 Column() {
-                     Text(song.title, maxLines = 1, fontSize = 13.sp,)
-                     Text(song.artist, maxLines = 1, fontSize = 11.sp, color = Color.Gray)
-                     Text(song.playCount.toString() + " plays", maxLines = 1, fontSize = 11.sp, color = Color.Gray)
-                 }
+                    Column() {
+                        Text(song.title, maxLines = 1, fontSize = 13.sp,)
+                        Text(song.artist, maxLines = 1, fontSize = 11.sp, color = Color.Gray)
+                        Text(song.playCount.toString() + " plays", maxLines = 1, fontSize = 11.sp, color = Color.Gray)
+                    }
 
-             }
+                }
             }
 
             item{
@@ -311,36 +289,35 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
         }
 
         // Sticky Header that fades in after scrolling
-            Box(modifier = Modifier
-                .fillMaxWidth(1f)
-                .background(Color(0x112F2F2F).copy(alpha = animatedAlpha))
-                .padding(horizontal = 10.dp)){
-                Row(modifier = Modifier.fillMaxWidth(1f),
-                    verticalAlignment = Alignment.CenterVertically) {
-                 IconButton(onClick = {
-                     navController.popBackStack()
-                 }) {
-                Icon(
-                    painterResource(R.drawable.arrow),
-                    "",
-                    modifier = Modifier.rotate(90f),
-                    tint = projectBlue
-                )
-            }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(1f),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(playlist.playlistname, modifier = Modifier.alpha(animatedAlphaContent))
-                    }
-
-
+        Box(modifier = Modifier
+            .fillMaxWidth(1f)
+            .background(Color(0x112F2F2F).copy(alpha = animatedAlpha))
+            .padding(horizontal = 10.dp)){
+            Row(modifier = Modifier.fillMaxWidth(1f),
+                verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = {
+                    navController.popBackStack()
+                }) {
+                    Icon(
+                        painterResource(R.drawable.arrow),
+                        "",
+                        modifier = Modifier.rotate(90f),
+                        tint = projectBlue
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(playlist[0].album.albumName, modifier = Modifier.alpha(animatedAlphaContent))
                 }
 
+
             }
 
+        }
+
     }
-}
 
 
 
@@ -361,4 +338,5 @@ fun calculateTotalScroll(state: LazyListState, density: Density): Int {
                     state.firstVisibleItemScrollOffset
         }
     }
+}
 }

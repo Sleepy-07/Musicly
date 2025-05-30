@@ -1,6 +1,7 @@
 package com.example.music_player.Components
 
 import android.content.Context
+import android.content.Intent
 import android.util.Log
 import androidx.compose.material3.FabPosition
 import androidx.compose.runtime.getValue
@@ -13,6 +14,7 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.SongMetadata
+import com.example.music_player.Services.MusicServices
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -32,7 +34,7 @@ object audioPlayer{
         private set
 
     var playBackState by mutableStateOf(PlayBackState.IDLE)
-        private set
+        internal set
 
     var playBackMode by mutableStateOf(PlayBackMode.NORMAL)
         internal set
@@ -132,6 +134,7 @@ object audioPlayer{
 
     fun playNext(context: Context){
         val db = Data.getInstance(context)
+        isPlaying = true
         exoplayer?.let {player ->
             when(playBackMode){
 
@@ -183,6 +186,7 @@ object audioPlayer{
 
 
     fun playPrevious(context: Context){
+        isPlaying=true
         exoplayer?.let { player->
             when(playBackMode){
 
@@ -192,6 +196,11 @@ object audioPlayer{
                     player.seekTo(player.currentMediaItemIndex,0L)
                 }
                 else -> {
+                    if(player.currentPosition >= 5000L){
+                        seekTo(0f)
+                    }
+                    else{
+
                     if(hasPreviousMediaItem()){
                         index--
                         if(index < 0){
@@ -213,6 +222,7 @@ object audioPlayer{
                         playBackMode == PlayBackMode.REPEAT_ALL
                     ){
                         player.seekTo(0,0L)
+                    }
                     }
                 }
             }
@@ -294,23 +304,39 @@ object audioPlayer{
         progress = 0f
     }
 
+
     fun getPlayer() : ExoPlayer{
         return exoplayer!!
     }
 
-    fun togglePause(){
+    fun togglePause(context: Context){
         exoplayer?.let {player->
 
             playBackState = when(playBackState){
-                PlayBackState.PLAYING -> PlayBackState.PAUSED
-                else -> PlayBackState.PLAYING
+                PlayBackState.PLAYING -> {
+                    PlayBackState.PAUSED
+                }
+                else -> {
+                    PlayBackState.PLAYING
+                }
             }
 
-            if(playBackState == PlayBackState.PLAYING) exoplayer?.play() else exoplayer?.pause()
+            if(playBackState == PlayBackState.PLAYING){
+                isPlaying = true
+                exoplayer?.play()
+
+            } else {
+                isPlaying = false
+                exoplayer?.pause()
+            }
 
         }
     }
-
+    fun pause(){
+        playBackState = audioPlayer.PlayBackState.PAUSED
+        exoplayer!!.pause()
+        isPlaying = false
+    }
     fun release(){
         stopProgress()
         exoplayer?.release()

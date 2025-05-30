@@ -11,7 +11,7 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.music_player.R
 
-@Database(entities = [SongMetadata::class, Playlist ::class, PlaylistEntry::class], version=2 , exportSchema = true)
+@Database(entities = [SongMetadata::class, Playlist ::class, PlaylistEntry::class, Artist::class, Album::class], version=2 , exportSchema = true)
 @TypeConverters(Converters::class)
 
 
@@ -21,6 +21,7 @@ abstract class Data() : RoomDatabase() {
 
     abstract fun inter() : Inter
     abstract fun playListDao() : PlayListDao
+    abstract fun musicDao() : MusicDao
 
     companion object{
 

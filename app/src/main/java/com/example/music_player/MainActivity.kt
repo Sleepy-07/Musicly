@@ -4,8 +4,10 @@ import android.Manifest
 import android.R.attr.data
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -68,15 +70,19 @@ import com.example.music_player.Components.audioPlayer
 import com.example.music_player.Components.createshowsheet
 import com.example.music_player.Components.currentsong
 import com.example.music_player.Components.customdialog
+import com.example.music_player.Components.isPlaying
 import com.example.music_player.Components.showsheet
 import com.example.music_player.Components.songduration
 import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.Playlist
 import com.example.music_player.Screens.SongsScreen
 import com.example.music_player.Screens.ViewplayList
+import com.example.music_player.Screens.albumScreen
 import com.example.music_player.Screens.fullSongScreen
 import com.example.music_player.Screens.libraryScreen
 import com.example.music_player.Screens.searchScreen
+import com.example.music_player.Services.MusicServices
+//import com.example.music_player.Services.RuningService
 import com.example.music_player.ui.theme.Music_PlayerTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +108,15 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU){
+
+        ActivityCompat.requestPermissions(
+            this,
+            arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+            0
+        )
+        }
+
         enableEdgeToEdge()
         setContent {
             val navController = rememberNavController()
@@ -190,6 +205,14 @@ private fun MainActivity.HomeScreen() {
 
             ){
                 currentsong?.let {song->
+
+                    isPlaying = true
+
+                    Intent(applicationContext, MusicServices::class.java).also {
+                        startService(it)
+                    }
+
+
                     Log.e("Like Song", "HomeScreen:like =   ${song.isLiked}", )
                     songduration = song.duration
                     PlayerBar(item = song,
@@ -197,7 +220,10 @@ private fun MainActivity.HomeScreen() {
                             audioPlayer.seekTo(postion)
                         },
                         onPlayPause = {
-                            audioPlayer.togglePause()
+                            audioPlayer.togglePause(context)
+                            Intent(context, MusicServices::class.java).apply {
+                                action = "UPDATE" // Add this action to your service
+                            }.also { context.startService(it) }
                         }, modifier = Modifier.clickable{
                         },
                         onClick = {
@@ -286,6 +312,10 @@ private fun MainActivity.HomeScreen() {
 
                     ViewplayList(innerpadding,playlist) }
                 composable ("Search"){ searchScreen() }
+                composable("AlbumScreen/{artistId}") {backStackEntry->
+                    val aritistid = backStackEntry.arguments?.getString("artistId")!!.toLong()
+
+                    albumScreen(innerpadding,aritistid) }
 
             }
 
@@ -312,7 +342,7 @@ fun ShowPlayBar(context : Context) {
             showsheet = false
         },
             tooglePlay = {
-                audioPlayer.togglePause()
+                audioPlayer.togglePause(context)
             },
             onSeek = {postion->
                 audioPlayer.seekTo(postion)

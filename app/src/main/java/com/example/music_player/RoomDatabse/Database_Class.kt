@@ -15,6 +15,9 @@ data class SongMetadata(
     val artist: String,
     val duration: Long,
     val uri: Uri,
+    val artistId: Long,
+    val albumId: Long,
+    val albumName : String,
     val album : Uri,
     var playCount: Int = 0,
     var isLiked: Boolean = false,
@@ -22,6 +25,23 @@ data class SongMetadata(
     var likedTimeStamp : Long = 0L
 )
 
+
+@Entity(tableName = "artists")
+data class Artist(
+    @PrimaryKey val artistId: Long,
+    val artistName: String,
+    val numberOfSongs: Int = 0,
+    val numberOfAlbums: Int = 0
+)
+
+@Entity(tableName = "albums")
+data class Album(
+    @PrimaryKey val albumId: Long,
+    val albumName: String,
+    val artistId: Long,
+    val albumArtUri: Uri,
+    val numberOfSongs: Int = 0
+)
 
 @Entity(tableName = "playList")
 data class Playlist(
@@ -46,3 +66,45 @@ data class PlaylistWithSongs(
     val songs: List<SongMetadata>
 )
 
+
+data class ArtistWithSongsAndAlbums(
+    @Embedded val artist: Artist,
+    @Relation(
+        parentColumn = "artistId",
+        entityColumn = "artistId"
+    )
+    val albums: List<Album>,
+    @Relation(
+        parentColumn = "artistId",
+        entityColumn = "artistId"
+    )
+    val songs: List<SongMetadata>
+)
+
+data class AlbumWithSongs(
+    @Embedded val album: Album,
+    @Relation(
+        parentColumn = "albumId",
+        entityColumn = "albumId"
+    )
+    val songs: List<SongMetadata>,
+    @Relation(
+        parentColumn = "artistId",
+        entityColumn = "artistId"
+    )
+    val artist: Artist
+)
+
+data class SongWithArtistAndAlbum(
+    @Embedded val song: SongMetadata,
+    @Relation(
+        parentColumn = "artistId",
+        entityColumn = "artistId"
+    )
+    val artist: Artist,
+    @Relation(
+        parentColumn = "albumId",
+        entityColumn = "albumId"
+    )
+    val album: Album
+)
