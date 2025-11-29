@@ -108,3 +108,11 @@ data class SongWithArtistAndAlbum(
     )
     val album: Album
 )
+
+
+
+
+data class IndexedSong(
+    val index: Int,
+    val song: SongMetadata
+)

@@ -76,25 +76,22 @@ import coil3.request.ImageRequest
 import coil3.request.error
 import coil3.request.fallback
 import coil3.request.placeholder
-import coil3.request.transformations
-//import com.example.music_player.Components.CurrentPlaylistname
 import com.example.music_player.Components.audioPlayer
-import com.example.music_player.Components.bottomlist
 import com.example.music_player.Components.currenetplaylistname
 import com.example.music_player.Components.currentsong
 import com.example.music_player.Components.currentsonglist
 import com.example.music_player.Components.getTotalDuration
+import com.example.music_player.Components.isPlaying
 import com.example.music_player.Components.songcurrenttime
 import com.example.music_player.Components.songduration
 import com.example.music_player.R
 import com.example.music_player.RoomDatabse.Data
-import com.example.music_player.RoomDatabse.Playlist
 import com.example.music_player.RoomDatabse.PlaylistEntry
 import com.example.music_player.RoomDatabse.SongMetadata
+import com.example.music_player.Services.MusicServices
 import com.example.music_player.ui.theme.projectBlue
 import kotlinx.coroutines.flow.collectLatest
-import kotlin.math.abs
-import kotlin.math.log
+
 
 //@Preview(showSystemUi = true)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,9 +99,6 @@ import kotlin.math.log
 
 
 fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modifier = Modifier, tooglePlay : () -> Unit ={}, onSeek : (Float) -> Unit = {} , onrRepeat : () -> Unit ={} , onShuffle : () -> Unit = {} ){
-
-//    val curreptnplaylistname = CurrentPlaylistname.current
-//
 
     Log.e(
         "OpenFull Page",
@@ -339,8 +333,15 @@ fun fullSongScreen(item : SongMetadata, onDismiss : () -> Unit  ,modifier: Modif
                             },
                         contentAlignment = Alignment.Center
                     ) {
-                        IconButton(onClick = {
-                            tooglePlay()
+                        IconButton(
+                            onClick = {
+                            isPlaying = !isPlaying
+                            Intent(context, MusicServices::class.java).apply {
+                                action = "UPDATE"
+                            }.also { context.startService(it) }
+
+                                tooglePlay()
+
                         }) {
                             Image(
                                 painterResource(

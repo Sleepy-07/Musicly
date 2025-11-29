@@ -65,10 +65,12 @@ import com.example.music_player.BottomSheetDialogs.addSongPlayList
 import com.example.music_player.Components.AritistList
 import com.example.music_player.Components.LocalAppNavController
 import com.example.music_player.Components.PlayerBar
+import com.example.music_player.Components.ShuffleList
 import com.example.music_player.Components.addSongSheet
 import com.example.music_player.Components.audioPlayer
 import com.example.music_player.Components.createshowsheet
 import com.example.music_player.Components.currentsong
+import com.example.music_player.Components.currentsonglist
 import com.example.music_player.Components.customdialog
 import com.example.music_player.Components.isPlaying
 import com.example.music_player.Components.showsheet
@@ -124,8 +126,7 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalAppNavController provides navController,
                 AritistList provides  artitstlist,
-
-            ) {
+                ) {
           Music_PlayerTheme {
               if(CheckRequest())
               HomeScreen()
@@ -205,8 +206,6 @@ private fun MainActivity.HomeScreen() {
 
             ){
                 currentsong?.let {song->
-
-                    isPlaying = true
 
                     Intent(applicationContext, MusicServices::class.java).also {
                         startService(it)
@@ -354,10 +353,12 @@ fun ShowPlayBar(context : Context) {
             onShuffle = {
                 Toast.makeText(context, "List Set to shuffle", Toast.LENGTH_SHORT).show()
                 audioPlayer.playBackMode = if(audioPlayer.playBackMode != audioPlayer.PlayBackMode.SHUFFLE) audioPlayer.PlayBackMode.SHUFFLE else audioPlayer.PlayBackMode.NORMAL
+
             }
         )
     }
 }
+
 
 private fun MainActivity.CheckRequest() : Boolean  {
 
@@ -371,7 +372,6 @@ private fun MainActivity.CheckRequest() : Boolean  {
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
             PERMISSION_REQUEST_KEY
         )
-
 
     } else{
         Log.d("MusicDebug", "Permission already granted.")

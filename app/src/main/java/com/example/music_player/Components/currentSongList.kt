@@ -46,17 +46,6 @@ import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.SongMetadata
 
 @Composable
-fun songListItemHome(list : List<SongMetadata>, modifier: Modifier = Modifier, onclick : (Pair<Long, SongMetadata>) ->Unit) {
-
-    Box(
-        modifier = Modifier.height(600.dp)
-    ){
-
-    }
-
-}
-
-@Composable
 fun SongGridItems(songlist : List<SongMetadata>,index: Int, onSongClick: (Long) -> Unit) {
     val context = LocalContext.current
 

@@ -43,26 +43,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.NavHost
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-//import coil.compose.AsyncImage
-import com.example.music_player.Components.AritistList
 import com.example.music_player.Components.LocalAppNavController
 import com.example.music_player.Components.createshowsheet
-import com.example.music_player.Components.likedSongList
 import com.example.music_player.Components.songListItemRest
 import com.example.music_player.R
 import com.example.music_player.RoomDatabse.Data
 import com.example.music_player.RoomDatabse.Playlist
 import com.example.music_player.RoomDatabse.PlaylistWithSongs
 import com.example.music_player.RoomDatabse.SongMetadata
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlin.coroutines.coroutineContext
-import kotlin.math.log
 
 @SuppressLint("CoroutineCreationDuringComposition")
 @OptIn(ExperimentalFoundationApi::class)

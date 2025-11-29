@@ -233,19 +233,6 @@ fun ViewplayList(innerPadding: PaddingValues, playListId : Long) {
                             Icon(painterResource(R.drawable.add),"")
                         }
                         }
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .border(1.dp, color = projectBlue, RoundedCornerShape(100.dp)),
-                            contentAlignment = Alignment.Center
-                        ){
-
-                        IconButton(
-                            onClick = {}
-                        ) {
-                            Icon(painterResource(R.drawable.shuffle),"", modifier = Modifier.size(35.dp))
-                        }
-                        }
 
                         Box(
                             modifier = Modifier

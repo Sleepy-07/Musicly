@@ -30,9 +30,15 @@ class MusicServices : Service(){
     private lateinit var mediaSession: MediaSessionCompat
 
 
-
     override fun onCreate() {
         super.onCreate()
+
+        if(audioPlayer.isPlaying()){
+            isPlaying = true
+        }
+        else{
+            isPlaying = false
+        }
 
         mediaSession = MediaSessionCompat(this, "MusicService").apply {
             isActive = true
@@ -136,7 +142,10 @@ class MusicServices : Service(){
             "CLOSE" -> {
                 stopForeground(true)
                 stopSelf()
-                audioPlayer.togglePause(this)
+                audioPlayer.playBackState = audioPlayer.PlayBackState.PAUSED
+                audioPlayer.getPlayer().pause()
+//                updateNotification()
+
             }
             "UPDATE" -> {
                 updateNotification()
@@ -243,13 +252,14 @@ class MusicServices : Service(){
                     audioPlayer.pause()
                     updateNotification()
                 }
+            }
         }
-    }
     }
 
 
     override fun onDestroy() {
         super.onDestroy()
+        audioPlayer.getPlayer().pause()
         unregisterReceiver(bluetoothReceiver)
     }
 
